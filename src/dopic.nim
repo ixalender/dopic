@@ -5,6 +5,8 @@ import sequtils
 import stb_image/read as stbi
 import stb_image/write as stbiw
 
+const JPEG_QUALITY = 100
+
 type
     ImageFormats* {.pure.} = enum
         PNG, JPG
@@ -18,6 +20,9 @@ type
     
     Point* = ref object
         x, y: int
+    
+    Size* = ref object
+        width, height: int
 
 
 proc newPixel(rgbSeq: seq[byte]): Pixel =
@@ -28,6 +33,12 @@ proc newPixel(rgbSeq: seq[byte]): Pixel =
     result.a = 0
     if rgbSeq.len > 3:
         result.a = rgbSeq[3]
+
+
+proc newSize(w, h: int): Size =
+    result = new(Size)
+    result.width = w
+    result.height = h
 
 
 proc chunks[T, R](s: seq[T], n: int, fun: proc (s: seq[T]): R): seq[R] =
@@ -41,22 +52,20 @@ proc flatten[T, R](s: seq[T], fun: proc (t: T): seq[R]): seq[R] =
         result.add(fun(p))
 
 
-proc newImage(data: seq[byte], w, h: int, components: int = 3): Image =
+proc newImage(data: seq[Pixel], size: Size): Image =
     result = new(Image)
-    result.width = w
-    result.height = h
-    result.data = chunks(
+    result.width = size.width
+    result.height = size.height
+    result.data = data
+
+
+proc newImage(data: seq[byte], size: Size, components: int = 3): Image =
+    let pixelData = chunks(
         data,
         components,
         proc (s: seq[byte]): Pixel = newPixel(s)
     )
-
-
-proc newImage(data: seq[Pixel], w, h: int, components: int = 3): Image =
-    result = new(Image)
-    result.width = w
-    result.height = h
-    result.data = data
+    result = newImage(pixelData, size)
 
 
 proc newPoint(x, y: int): Point =
@@ -65,18 +74,18 @@ proc newPoint(x, y: int): Point =
     result.y = y
 
 
-proc changeSize(image: Image, toW, toH: int): Image =
-    result = newImage(newSeq[Pixel](toW * toH), toW, toH)
+proc changeSize(image: Image, size: Size): Image =
+    result = newImage(newSeq[Pixel](size.width * size.height), size)
     
-    let xRatio = (image.width shl 16) div toW
-    let yRatio = (image.height shl 16) div toH
+    let xRatio = (image.width shl 16) div size.width
+    let yRatio = (image.height shl 16) div size.height
     let data: seq[Pixel] = image.data
     let imgWidth: int = image.width
 
-    for hPix in 0..pred(toH):
-        for wPix in 0..pred(toW):
+    for hPix in 0..pred(size.height):
+        for wPix in 0..pred(size.width):
             let y = ((hPix * yRatio) shr 16) * imgWidth
-            let h = hPix * toW
+            let h = hPix * size.width
             let x = (wPix * xRatio) shr 16
 
             result.data[wPix + h] = data[x + y]
@@ -120,7 +129,7 @@ proc saveFile(format: ImageFormats, image: Image, file: string) =
                 proc (p: Pixel): seq[byte] =
                     @[p.r, p.g, p.b]
             ),
-            100
+            JPEG_QUALITY
         )
 
 
@@ -131,12 +140,13 @@ proc resizeImage(
     width, height: int,
     verb=false
 ) =
-    var fileWidth, fileHeight, fileChannels: int
+    var srcWidth, srcHeight, srcChannels: int
 
     let desiredChannel = matchChannel(format)
-    let data = stbi.load(file, fileWidth, fileHeight, fileChannels, desiredChannel)
-    let image: Image = newImage(data, fileWidth, fileHeight, desiredChannel)
-    let resizedImage: Image = image.changeSize(width, height)
+    let data = stbi.load(file, srcWidth, srcHeight, srcChannels, desiredChannel)
+
+    let image: Image = newImage(data, newSize(srcWidth, srcHeight), desiredChannel)
+    let resizedImage: Image = image.changeSize(newSize(width, height))
 
     saveFile(format, resizedImage, output)
         
@@ -156,8 +166,8 @@ proc insertImage(
     let desiredChannel = matchChannel(format)
     let srcData = stbi.load(file, srcWidth, srcHeight, srcChannels, desiredChannel)
     let destData = stbi.load(dest, destWidth, destHeight, destChannels, desiredChannel)
-    let srcImage: Image = newImage(srcData, srcWidth, srcHeight, desiredChannel)
-    let destImage: Image = newImage(destData, destWidth, destHeight, desiredChannel)
+    let srcImage: Image = newImage(srcData, newSize(srcWidth, srcHeight), desiredChannel)
+    let destImage: Image = newImage(destData, newSize(destWidth, destHeight), desiredChannel)
 
     srcImage.insertTo(destImage, newPoint(x, y))
     saveFile(format, destImage, output)
