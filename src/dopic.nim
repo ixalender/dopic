@@ -151,7 +151,7 @@ proc resizeImage(
     saveFile(format, resizedImage, output)
         
 
-proc insertImage(
+proc pasteImage(
     file: string,
     dest: string,
     output: string,
@@ -175,19 +175,19 @@ proc insertImage(
 
 when isMainModule:
     dispatchMulti(
-        [resizeImage, cmdName="resize", doc="resize an image", help={
-            "file": "source image file",
-            "output": "output image file",
-            "format": "image format",
-            "width": "desirable image width",
-            "height": "desirable image height"
+        [resizeImage, cmdName="resize", doc="To resize an image", help={
+            "file": "a source image file",
+            "output": "an output image file",
+            "format": "an image format",
+            "width": "a desirable image width",
+            "height": "a desirable image height"
         }],
-        [insertImage, cmdName="insert", doc="insert an image to another image", help={
-            "file": "source image file",
-            "dest": "destination image file",
-            "output": "output image file",
-            "format": "image format",
-            "x": "X location of insertable image",
-            "y": "Y location of insertable image"
+        [pasteImage, cmdName="paste", doc="To paste an image to another image", help={
+            "file": "a source image file",
+            "dest": "a destination image file",
+            "output": "an output image file",
+            "format": "the image format",
+            "x": "the X location of the image to paste",
+            "y": "the Y location of the image to paste"
         }]
     )
