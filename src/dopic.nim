@@ -35,7 +35,7 @@ proc newPixel(rgbSeq: seq[byte]): Pixel =
         result.a = rgbSeq[3]
 
 
-proc newSize(w, h: int): Size =
+proc newSize*(w, h: int): Size =
     result = new(Size)
     result.width = w
     result.height = h
@@ -52,14 +52,14 @@ proc flatten[T, R](s: seq[T], fun: proc (t: T): seq[R]): seq[R] =
         result.add(fun(p))
 
 
-proc newImage(data: seq[Pixel], size: Size): Image =
+proc newImage*(data: seq[Pixel], size: Size): Image =
     result = new(Image)
     result.width = size.width
     result.height = size.height
     result.data = data
 
 
-proc newImage(data: seq[byte], size: Size, components: int = 3): Image =
+proc newImage*(data: seq[byte], size: Size, components: int = 3): Image =
     let pixelData = chunks(
         data,
         components,
@@ -106,7 +106,7 @@ proc insertTo(subjImage: Image, destImage: Image, destPoint: Point) =
         widthDelta += (destImage.width - subjImage.width)
 
 
-proc matchChannel(format: ImageFormats): int =
+proc matchChannel*(format: ImageFormats): int =
     if format == ImageFormats.JPG:
         stbi.RGB
     elif format == ImageFormats.PNG:
@@ -133,7 +133,7 @@ proc saveFile(format: ImageFormats, image: Image, file: string) =
         )
 
 
-proc resizeImage(
+proc resizeImage*(
     file: string,
     output: string,
     format: ImageFormats,
@@ -151,7 +151,7 @@ proc resizeImage(
     saveFile(format, resizedImage, output)
         
 
-proc pasteImage(
+proc pasteImage*(
     file: string,
     dest: string,
     output: string,

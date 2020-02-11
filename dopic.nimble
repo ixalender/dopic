@@ -1,11 +1,12 @@
 # Package
 
 version       = "0.1.0"
-author        = "Nekrasov Alexandr"
+author        = "Alexander Nekrasov"
 description   = "A new awesome nimble package"
 license       = "MIT"
 srcDir        = "src"
 bin           = @["dopic"]
+skipDirs      = @["tests"]
 
 # Dependencies
 
